@@ -11,6 +11,7 @@ _________               __  ________    _________
 - [PD DB Navigator](#PD-DB-Navigator)
     - [Supported formats](#Supported-formats)
     - [Comparison file](#Comparison-file)
+    - [Calling modes](#Calling-modes)
 
 # PD DB Navigator
 
@@ -111,7 +112,7 @@ n_files = (1 + sqrt(1 + 2 * file_size_Bytes))/2;
 ### firstTimeF1(n_comps, idxF1)
 NOTE: Take in consideration that for this purpose:
 - The indexes of the files start on 1
-- The index of the array start on 0
+- The index of the array starts on 0
 
 As the array represents comparison results, each number is related to two files.
 
@@ -186,6 +187,68 @@ The next table shows the concept:
 | 8 | 3 vs 5 | 7 | 7 + 5 - 3 - 1 |
 | 9 | 4 vs 5 | 9 | 9 + 5 - 4 - 1 |
 
+### Using the comparison file
+
+In this section you will find a couple of programming examples of how to read and use it
+
+#### C++
+~~~ C++
+#include <iostream>
+#include <fstream>
+
+int main() {
+    // Open the file in binary mode
+    std::ifstream file("data.bin", std::ios::binary);
+
+    if (!file) {
+        std::cerr << "Failed to open the file." << std::endl;
+        return 1;
+    }
+
+    // Read the number from the file
+    float number;
+    file.read(reinterpret_cast<char*>(&number), sizeof(number));
+
+    // Check if the reading was successful
+    if (!file) {
+        std::cerr << "Error while reading the number from the file." << std::endl;
+        return 1;
+    }
+
+    // Display the number in the console
+    std::cout << "Number read from the file: " << number << std::endl;
+
+    // Close the file
+    file.close();
+
+    return 0;
+}
+~~~
+
+#### MATLAB
+~~~ matlab
+% Open the file in binary mode
+fileID = fopen('data.bin', 'rb');
+
+if fileID == -1
+    error('Failed to open the file.');
+end
+
+% Read the number from the file
+number = fread(fileID, 1, 'float');
+
+% Check if the reading was successful
+if isempty(number)
+    error('Error while reading the number from the file.');
+end
+
+% Display the number in the command window
+disp(['Number read from the file: ' num2str(number)]);
+
+% Close the file
+fclose(fileID);
+~~~
+
 ## Calling modes
 
 Option 1: With the path of the database as argument
@@ -194,12 +257,10 @@ Option 1: With the path of the database as argument
 Reduced_DB.exe [path_db]
 ~~~
 
-Option 2: With the path of the database in an auxiliary file ".txt"
+Option 2: With the path of the database in an auxiliary file on following path relative to the `.exe` file:
+
+`memory\DEF_DB_PATH.txt`
 
 ~~~
 Reduced_DB.exe
 ~~~
-// TODO Programar esto
-
-Path Carlos
-C:\Users\el4teo\source\repos\Reduced_DB\x64\Debug
