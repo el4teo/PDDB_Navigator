@@ -189,61 +189,68 @@ The next table shows the concept:
 
 ### Using the comparison file
 
-In this section you will find a couple of programming examples of how to read and use it
+In this section you will find a couple of programming examples of how to read and use the comparison file (___*.pdcmp*___).
 
 #### C++
 ~~~ C++
 #include <iostream>
 #include <fstream>
+#include <filesystem>
 
-int main() {
-    // Open the file in binary mode
-    std::ifstream file("data.bin", std::ios::binary);
+using namespace std;
+namespace fs = std::filesystem;
 
-    if (!file) {
-        std::cerr << "Failed to open the file." << std::endl;
-        return 1;
-    }
+vector<float> read_pdcmp(string& orig_file) {
+	// Open the file in binary mode
+	ifstream file(orig_file, ios::binary);
 
-    // Read the number from the file
-    float number;
-    file.read(reinterpret_cast<char*>(&number), sizeof(number));
+	if (!file) {
+		throw runtime_error("Imposible to open " + orig_file);
+	}
 
-    // Check if the reading was successful
-    if (!file) {
-        std::cerr << "Error while reading the number from the file." << std::endl;
-        return 1;
-    }
+	// Calculate number of readings
+	long file_size_Bytes = fs::file_size(orig_file);
+	long n_comps = file_size_Bytes / 4;
+	vector<float> vec(n_comps);
 
-    // Display the number in the console
-    std::cout << "Number read from the file: " << number << std::endl;
+	// Read the number from the file
+	for (long i = 0; i < n_comps; i++) {
+		file.read(reinterpret_cast<char*>(&vec[i]), sizeof(float));
+		if (!file) {
+			file.close();
+			throw runtime_error("Error while reading " + orig_file);
+		}
+	}
 
-    // Close the file
-    file.close();
+	// Close the file
+	file.close();
 
-    return 0;
+	return vec;
 }
 ~~~
 
 #### MATLAB
 ~~~ matlab
 % Open the file in binary mode
-fileID = fopen('data.bin', 'rb');
+fileID = fopen('data.pdcmp', 'rb');
 
 if fileID == -1
     error('Failed to open the file.');
 end
 
-% Read the number from the file
-number = fread(fileID, 1, 'float');
+% Get the file size
+fseek(fileID, 0, 'eof');
+file_size_Bytes = ftell(fileID);
+fseek(fileID, 0, 'bof');
 
-% Check if the reading was successful
-if isempty(number)
-    error('Error while reading the number from the file.');
+% Calculate number of readings
+n_comps = file_size_Bytes / 4;
+vec = zeros(n_comps, 1);
+
+for i = 1:n_comps
+    % Read the number from the file
+    vec(i) = fread(fileID, 1, 'float');
 end
-
-% Display the number in the command window
-disp(['Number read from the file: ' num2str(number)]);
 
 % Close the file
 fclose(fileID);
@@ -264,3 +271,36 @@ Option 2: With the path of the database in an auxiliary file on following path r
 ~~~
 Reduced_DB.exe
 ~~~
+
+### Functionalities
+
+#### Comparation
+
+This will export a folder with the `.pdcmp` files of the selected deffects.
+
+By default all the deffects are selected, if you want a custom quantity use the `Set selected defects` option
+
+Steps:
+- [3]: Open DB
+- [5]: Compare patterns [...]
+  - [2]: Set selected defects (optional)
+  - [3]: Exhaustive comparison
+
+#### Export def. names
+
+As the `.pdcmp` files only save the results of the comparison of different files, this functionality may be needed in order to pass from a index to a filename.
+
+The program will generate `.names` files for the selecetd defects. The idea is to use the same selection from the [comparation](#comparation)
+Steps:
+- [3]: Open DB
+- [5]: Compare patterns [...]
+  - [4]: Export selected PD file names
+
+
+#### Export XLSX
+
+[used lib](https://libxlsxwriter.github.io/getting_started.html)
+
+This functionality will convert the `.pdcmp` files to a `.xlsx` files, more easy to interpret from a human point of view.
+
+One sheet contains the matrix, and an additional one contains useful info.
